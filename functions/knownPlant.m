@@ -1,4 +1,5 @@
 function k = knownPlant()
+addpath("constants/")
 rng(PartOneConsts.SEED);
 w_0 = [-0.5247, -0.2060, 0.3324, -0.2631, 0.2358, 0.0304, 0.3525, -0.4812, -0.0485, -0.2964]; % Pesos da planta
 ordem = length(w_0); % ordem da planta
@@ -23,5 +24,6 @@ for i = 1:PartOneConsts.REALIZATIONS % Loop das realizações
     end
 end
 k = v; % Retorna os pesos preditos após todas as iterações
-PlotLearningCurve(squared_errors, excess_errors, PartOneConsts.ITERATIONS)
+PlotMSECurve(squared_errors, PartOneConsts.ITERATIONS)
+PlotEMSECurve(excess_errors, PartOneConsts.ITERATIONS)
 end
