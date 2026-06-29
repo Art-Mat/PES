@@ -11,4 +11,5 @@ getOrder(x_white, y_white) % Gráfico para questão a)
 % Ordem da planta é de 30, assim o vetor tem 31 casas
 w_white = adaptiveFilter(x_white, y_white, 31)
 w_corr = adaptiveFilter(x_corr, y_corr, 31)
+k = struct('white', w_white, 'correlated', w_corr);
 end
