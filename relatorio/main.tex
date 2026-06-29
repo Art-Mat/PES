@@ -1,0 +1,786 @@
+\documentclass[11pt,a4paper,oneside]{report}
+
+% ------------------------------------------------------------
+% PACOTES
+% ------------------------------------------------------------
+
+% ------------------------------------------------------------
+% PACOTES
+% ------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\IfFileExists{brazil.ldf}
+  {\usepackage[brazil]{babel}}
+  {\usepackage[english]{babel}}
+
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{tocloft}
+
+% ------------------------------------------------------------
+% CONFIGURACOES GERAIS
+% ------------------------------------------------------------
+\geometry{top=2.1cm,bottom=2.1cm,left=2.3cm,right=2.3cm}
+\graphicspath{{figuras/}{./}}
+\setlength{\parindent}{1.2cm}
+\setlength{\parskip}{0.25em}
+\renewcommand{\arraystretch}{1.18}
+\raggedbottom
+
+\definecolor{azulpoli}{RGB}{0,70,127}
+\definecolor{cinzaclaro}{RGB}{242,244,247}
+
+\titleformat{\chapter}[hang]
+  {\Huge\bfseries\color{black}}
+  {\thechapter.}{0.6em}{}
+
+\titlespacing*{\chapter}
+  {0pt}
+  {-20pt}
+  {25pt}
+
+\titleformat{\section}
+  {\Large\bfseries\color{black}}
+  {\thesection.}{0.6em}{}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{black}}
+  {\thesubsection}{0.6em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{PSI3431 -- Processamento Estatístico de Sinais}
+\fancyhead[R]{Identificação de Sistemas com LMS}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=black,
+    citecolor=black,
+    pdftitle={Identificação de Sistemas com o Algoritmo LMS},
+    pdfauthor={José Victor Lyra de Castro, Caio de Paula Colnago e Arthur Jesus}
+}
+
+\captionsetup{font=small,labelfont=bf}
+\renewcommand{\cfttoctitlefont}{\Huge\bfseries}
+\renewcommand{\cftsecfont}{\bfseries}
+\renewcommand{\cftsecpagefont}{\bfseries}
+\renewcommand{\cftsubsecfont}{\normalfont}
+\renewcommand{\cftsubsecpagefont}{\normalfont}
+\renewcommand{\cftchapfont}{\bfseries}
+\renewcommand{\cftchappagefont}{\bfseries}
+\newcommand{\wtrue}{w^{o}}
+\newcommand{\what}{\widehat{w}}
+
+\begin{document}
+
+% ------------------------------------------------------------
+% CAPA
+% ------------------------------------------------------------
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+    \thispagestyle{empty}
+    \begin{center}
+        \IfFileExists{poli.png}{
+            \includegraphics[width=0.22\textwidth]{poli.png}
+        }{
+            \vspace*{1.5cm}
+        }
+
+        \vspace{0.7cm}
+
+        {\large\textbf{UNIVERSIDADE DE SÃO PAULO}}\\[0.15cm]
+        {\large Escola Politécnica}\\[0.15cm]
+        {\large PSI3431 -- Processamento Estatístico de Sinais}
+
+        \vfill
+
+        {\LARGE\bfseries Identificação de Sistemas com o Algoritmo LMS}\\[0.45cm]
+        {\large}
+
+        \vfill
+
+        \begin{tabular}{ll}
+            \textbf{Integrante 1:} & José Victor Lyra de Castro \\
+            \textbf{NUSP:} & 14747340 \\[0.4cm]
+
+            \textbf{Integrante 2:} & Caio de Paula Colnago \\
+            \textbf{NUSP:} & 12608900 \\[0.4cm]
+
+            \textbf{Integrante 3:} & Artur Mateo Freire de Jesus \\
+            \textbf{NUSP:} & 14745525 \\
+        \end{tabular}
+
+        \vfill
+
+        \textbf{Código do projeto:}\\[0.15cm]
+        \href{https://github.com/Art-Mat/PES}
+        {\texttt{github.com/Art-Mat/PES}}
+
+        \vspace{0.8cm}
+
+        {\large São Paulo}\\
+        {\large 2026}
+    \end{center}
+\end{titlepage}
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
+
+% ------------------------------------------------------------
+% SUMARIO
+% ------------------------------------------------------------
+\thispagestyle{fancy}
+\tableofcontents
+\vfill
+
+\clearpage
+
+% ------------------------------------------------------------
+% TOPICO A - PAGINA 3
+% ------------------------------------------------------------
+
+\chapter{Parte 1}
+
+\section{Visão geral da solução}
+
+\paragraph{} O código implementa a identificação de um sistema por meio de um
+filtro adaptativo LMS (\textit{Least Mean Squares}). A planta é
+conhecida e possui dez coeficientes. Para verificar estatisticamente a
+convergência do algoritmo, o experimento é repetido em
+\(1000\) realizações, sempre utilizando novas sequências pseudoaleatórias
+de entrada e de ruído.
+
+Em cada realização, o algoritmo executa as seguintes etapas:
+
+\begin{enumerate}[label=\arabic*., leftmargin=*, itemsep=0.3em]
+    \item gera um sinal de entrada branco;
+    \item calcula a saída da planta conhecida;
+    \item adiciona ruído à saída da planta;
+    \item calcula a saída do filtro adaptativo;
+    \item determina o erro entre a saída desejada e a saída estimada;
+    \item atualiza os coeficientes do filtro por meio do algoritmo LMS;
+    \item armazena os erros necessários para estimar as curvas de
+    MSE e EMSE.
+\end{enumerate}
+
+\subsection{Organização geral dos arquivos}
+
+\paragraph{} A implementação foi dividida em cinco arquivos, de forma a separar os
+parâmetros da simulação, o processamento do algoritmo e a geração dos
+gráficos. A organização adotada é apresentada na
+Tabela~\ref{tab:organizacao-arquivos}.
+
+\begin{table}[H]
+    \centering
+    \caption{Organização dos arquivos utilizados na implementação.}
+    \label{tab:organizacao-arquivos}
+
+    \small
+    \setlength{\tabcolsep}{6pt}
+    \renewcommand{\arraystretch}{1.25}
+
+    \begin{tabular}{
+        @{}
+        >{\raggedright\arraybackslash}p{0.25\textwidth}
+        >{\raggedright\arraybackslash}p{0.68\textwidth}
+        @{}
+    }
+        \toprule
+        \textbf{Arquivo} & \textbf{Responsabilidade} \\
+        \midrule
+
+        \texttt{main.m}
+        &
+        Iniciar a execução geral do projeto.
+        \\
+
+        \texttt{PartOneConsts.m}
+        &
+        Centralizar os parâmetros e as constantes utilizadas na simulação.
+        \\
+
+        \texttt{knownPlant.m}
+        &
+        Executar o processo de identificação da planta conhecida por meio
+        do algoritmo LMS.
+        \\
+
+        \texttt{PlotMSECurve.m}
+        &
+        Calcular a média dos erros quadráticos e gerar a curva de
+        aprendizado do MSE.
+        \\
+
+        \texttt{PlotEMSECurve.m}
+        &
+        Calcular a média dos erros quadráticos em excesso e gerar a curva
+        de EMSE.
+        \\
+
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Essa separação torna a implementação mais modular e facilita sua
+manutenção. Os parâmetros da simulação ficam concentrados em um único
+arquivo, enquanto o processamento do algoritmo e as rotinas de
+visualização são mantidos em funções independentes. Dessa forma,
+alterações nos parâmetros, no algoritmo ou na apresentação dos
+resultados podem ser realizadas sem modificar toda a estrutura do
+projeto.
+
+
+\section{Algoritmo, recursão e parâmetros utilizados}
+
+\subsection{Problema de identificação}
+
+A planta considerada é um filtro FIR de dez coeficientes, representado pelo vetor verdadeiro
+
+\begin{equation}
+\resizebox{0.96\textwidth}{!}{$
+\wtrue=
+[-0.5247\; -0.2060\; 0.3324\; -0.2631\; 0.2358\; 0.0304\; 0.3525\; -0.4812\; -0.0485\; -0.2964]^T.
+$}
+\end{equation}
+
+Embora \(\wtrue\) seja conhecido na simulação, ele é tratado como desconhecido pelo filtro adaptativo.
+O objetivo do LMS é obter uma estimativa \(\what(i)\) a partir apenas da entrada e da saída observada.
+Para cada instante \(i\), define-se o vetor de entrada
+
+\begin{equation}
+    {u}(i)=[u(i)\;u(i-1)\;\cdots\;u(i-9)]^T.
+\end{equation}
+
+O sinal \(u(i)\) é branco, gaussiano, de média nula e variância unitária.
+
+Essa escolha é adequada porque o sinal branco excita todas as direções do filtro e, por possuir matriz
+de autocorrelação proporcional à identidade, favorece uma convergência uniforme dos coeficientes.
+
+A saída observada da planta é
+
+\begin{equation}
+    d(i)={u}^T(i)\wtrue+v(i),
+\end{equation}
+
+em que \(v(i)\) é um ruído branco de saída, independente da entrada, com média zero e variância
+\(\sigma_v^2=0{,}001\). A saída do filtro adaptativo e o erro de estimação são, respectivamente,
+
+\begin{equation}
+    y(i)={u}^T(i)\what(i),
+    \qquad
+    e(i)=d(i)-y(i).
+\end{equation}
+
+\subsection{Critério e recursão do LMS}
+
+O critério a ser minimizado é o erro médio quadrático
+
+\begin{equation}
+    J(w)=E[e^2(i)].
+\end{equation}
+
+O LMS substitui o gradiente estatístico de \(J(w)\) por uma estimativa instantânea. Com a
+convenção adotada no código, a atualização dos coeficientes é
+
+\begin{equation}
+    \what(i+1)=\what(i)+\mu\,{u}(i)e(i).
+\end{equation}
+
+Essa recursão desloca os coeficientes na direção que reduz o erro quadrático observado. A solução tende
+à solução de Wiener \(w^{\star}=R_u^{-1}r_{du}\), sem exigir o cálculo explícito das
+correlações.
+
+\clearpage
+
+% ------------------------------------------------------------
+% TOPICO A - PAGINA 4
+% ------------------------------------------------------------
+\subsection{Configuração da simulação}
+
+Os parâmetros utilizados estão resumidos na Tabela~\ref{tab:parametros}.
+
+\begin{table}[H]
+    \centering
+    \caption{Parâmetros empregados na identificação da planta conhecida.}
+    \label{tab:parametros}
+    \begin{tabular}{p{5.0cm} p{3.2cm} p{5.2cm}}
+        \toprule
+        \textbf{Parâmetro} & \textbf{Valor} & \textbf{Finalidade} \\
+        \midrule
+        Número de coeficientes \(L\) & 10 & Dimensão da planta e do filtro adaptativo \\
+        Realizações independentes & 1000 & Aproximação das médias estatísticas \\
+        Iterações por realização & 500 & Observação do transitório e do regime permanente \\
+        Passo de adaptação \(\mu\) & 0,02 & Compromisso entre velocidade e erro residual \\
+        Variância da entrada \(\sigma_u^2\) & 1 & Entrada branca de potência unitária \\
+        Variância do ruído \(\sigma_v^2\) & 0,001 & Piso de erro irredutível da observação \\
+        Semente aleatória & 0 & Reprodutibilidade numérica \\
+        Inicialização & \(\what(0)=0\) & Ausência de conhecimento prévio da planta \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Para cada realização, o vetor de entrada e os coeficientes estimados são zerados. Em cada iteração,
+uma nova amostra gaussiana é inserida em \(u(i)\), calcula-se \(d(i)\), obtém-se o erro e aplica-se
+a recursão do LMS. As realizações usam sequências independentes de entrada e ruído.
+
+O procedimento pode ser resumido em quatro passos:
+
+\begin{enumerate}[label=\arabic*.,leftmargin=1.0cm,itemsep=0.25em]
+    \item gerar \(d(i)=u^T(i)\wtrue+v(i)\);
+    \item calcular \(y(i)=u^T(i)\what(i)\) e \(e(i)=d(i)-y(i)\);
+    \item armazenar o erro quadrático e o erro em excesso;
+    \item atualizar \(\what(i+1)=\what(i)+\mu u(i)e(i)\).
+\end{enumerate}
+
+O MSE experimental é obtido pela média dos erros quadráticos nas \(M=1000\) realizações:
+
+\begin{equation}
+    \widehat{\mathrm{MSE}}(i)=\frac{1}{M}\sum_{m=1}^{M}e_m^2(i).
+\end{equation}
+
+Já o erro em excesso desconsidera diretamente o ruído de saída:
+
+\begin{equation}
+    e_{a,m}(i)=u_m^T(i)\bigl(\wtrue-\what_m(i)\bigr),
+    \qquad
+    \widehat{\mathrm{EMSE}}(i)=\frac{1}{M}\sum_{m=1}^{M}e_{a,m}^2(i).
+\end{equation}
+
+Como \(R_u=I\), o maior autovalor é \(\lambda_{\max}=1\). O valor \(\mu=0{,}02\)
+é pequeno em relação aos limites usuais de estabilidade, sendo adequado para obter convergência suave
+e baixo erro residual, ainda que exija algumas centenas de iterações.
+
+\clearpage
+
+% ------------------------------------------------------------
+% TOPICO B - PAGINA 5
+% ------------------------------------------------------------
+\section{Curva do erro médio quadrático (MSE)}
+
+O MSE inclui tanto o erro decorrente da diferença entre os coeficientes quanto o ruído presente na saída:
+
+\begin{equation}
+    \mathrm{MSE}(i)=E[e^2(i)]
+    =E[e_a^2(i)]+\sigma_v^2
+    =\mathrm{EMSE}(i)+J_{\min},
+\end{equation}
+
+em que \(J_{\min}=\sigma_v^2\), pois o ruído é independente da entrada e não pode ser previsto pelo filtro.
+
+\begin{figure}[H]
+    \centering
+    \IfFileExists{MSE_1.png}{
+        \includegraphics[width=0.88\textwidth]{MSE_1.png}
+    }{
+        \fbox{\parbox[c][7cm][c]{0.85\textwidth}{\centering Inserir o arquivo \texttt{MSE\_1.png}.}}
+    }
+    \caption{Curva de aprendizado do MSE, calculada sobre 1000 realizações.}
+    \label{fig:mse}
+\end{figure}
+
+Observa-se um curto crescimento inicial, associado ao preenchimento progressivo da linha de atraso e ao
+transitório dos coeficientes inicialmente nulos. Depois desse período, o MSE diminui de forma aproximadamente
+monótona e alcança o regime permanente por volta de 300 iterações.
+
+O patamar final situa-se próximo de \(-29{,}5\,\mathrm{dB}\), ligeiramente acima do limite ideal de
+\(-30\,\mathrm{dB}\). Esse limite decorre diretamente da variância do ruído:
+
+\begin{equation}
+    10\log_{10}(\sigma_v^2)
+    =10\log_{10}(0{,}001)
+    =-30\,\mathrm{dB}.
+\end{equation}
+
+A pequena diferença é esperada: com passo constante, o LMS não permanece exatamente no ponto ótimo,
+mas oscila em torno dele, produzindo um erro de desajuste adicional.
+
+\clearpage
+
+% ------------------------------------------------------------
+% TOPICO C - PAGINA 6
+% ------------------------------------------------------------
+\section{Curva do erro médio quadrático em excesso (EMSE)}
+
+O EMSE mede apenas a parcela de erro provocada pelo afastamento entre os coeficientes estimados e os
+coeficientes verdadeiros:
+
+\begin{equation}
+    \mathrm{EMSE}(i)
+    =E\!\left[\left|u^T(i)(\wtrue-\what(i))\right|^2\right].
+\end{equation}
+
+Assim, diferentemente do MSE, o EMSE não contém diretamente a potência do ruído de saída.
+
+\begin{figure}[H]
+    \centering
+    \IfFileExists{EMSE_1.png}{
+        \includegraphics[width=0.88\textwidth]{EMSE_1.png}
+    }{
+        \fbox{\parbox[c][7cm][c]{0.85\textwidth}{\centering Inserir o arquivo \texttt{EMSE\_1.png}.}}
+    }
+    \caption{Curva do erro médio quadrático em excesso, calculada sobre 1000 realizações.}
+    \label{fig:emse}
+\end{figure}
+
+A curva apresenta o mesmo transitório inicial observado no MSE, seguido de queda contínua até aproximadamente
+300 iterações. O regime permanente ocorre em torno de \(-39{,}5\,\mathrm{dB}\), evidenciando que a parcela
+de erro associada ao desajuste dos coeficientes tornou-se aproximadamente dez vezes menor que a potência do ruído.
+
+O EMSE não converge exatamente a zero porque o passo \(\mu\) permanece constante. Mesmo depois de atingir
+a vizinhança de \(\wtrue\), cada nova realização instantânea de entrada e ruído continua perturbando a
+estimativa. Um passo menor reduziria esse patamar, mas aumentaria o tempo necessário para a convergência.
+
+\clearpage
+
+% ------------------------------------------------------------
+% TOPICO D - PAGINA 7
+% ------------------------------------------------------------
+\section{Análise dos resultados e justificativa das escolhas}
+
+Os resultados confirmam a identificação da planta. Após aproximadamente 300 iterações, MSE e EMSE entram
+em regime permanente, indicando que os coeficientes estimados passaram a oscilar em uma pequena vizinhança
+dos coeficientes verdadeiros. A média de 1000 realizações reduz a variabilidade das curvas e permite interpretar
+os resultados como aproximações das esperanças estatísticas.
+
+Para entrada branca gaussiana de variância unitária, o desajuste aproximado do LMS é
+
+\begin{equation}
+    \mathcal{M}\approx\frac{\mu L\sigma_u^2}{2}
+    =0{,}10.
+\end{equation}
+
+Consequentemente, as previsões de regime permanente são
+
+\begin{align}
+    \mathrm{EMSE}_{\infty}
+    &\approx \mathcal{M}\,J_{\min}
+      =0{,}10\times0{,}001=10^{-4}
+      \quad\Rightarrow\quad -40\,\mathrm{dB},\\
+    \mathrm{MSE}_{\infty}
+    &\approx J_{\min}+\mathrm{EMSE}_{\infty}
+      =0{,}0011
+      \quad\Rightarrow\quad -29{,}59\,\mathrm{dB}.
+\end{align}
+
+\begin{table}[H]
+    \centering
+    \caption{Comparação entre previsões teóricas e resultados observados.}
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Grandeza} & \textbf{Previsão aproximada} & \textbf{Valor observado} \\
+        \midrule
+        Início do regime permanente & cerca de 300 iterações & cerca de 300 iterações \\
+        MSE em regime permanente & \(-29{,}59\,\mathrm{dB}\) & aproximadamente \(-29{,}5\,\mathrm{dB}\) \\
+        EMSE em regime permanente & \(-40\,\mathrm{dB}\) & aproximadamente \(-39{,}5\,\mathrm{dB}\) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+A proximidade entre teoria e simulação valida a implementação. O passo \(\mu=0{,}02\) mostrou-se uma escolha
+coerente: forneceu convergência estável dentro das 500 iterações e desajuste de aproximadamente 10\%. Um valor
+maior aceleraria inicialmente a adaptação, mas elevaria o EMSE de regime permanente e poderia comprometer a
+estabilidade. Um valor menor reduziria o erro residual, ao custo de uma convergência mais lenta.
+
+Também foi adequada a utilização de entrada branca, pois \(R_u=I\) reduz a dispersão entre os modos
+de convergência. Para entradas coloridas, a maior separação entre os autovalores da matriz de autocorrelação
+tenderia a tornar a convergência mais lenta e desigual.
+
+\chapter{Parte 2}
+
+\section{Visão geral da solução}
+
+\paragraph{} Nesta etapa, a resposta ao impulso da planta não é fornecida. A identificação deve ser realizada
+exclusivamente a partir dos sinais de entrada e saída contidos nos arquivos \texttt{whites.mat} e
+\texttt{correl.mat}. Cada conjunto contém 100 realizações do mesmo sistema, sendo que o primeiro
+utiliza entrada branca e o segundo utiliza entrada temporalmente correlacionada.
+
+\subsection{Organização dos arquivos da segunda parte}
+
+\paragraph{} Os arquivos empregados na segunda parte são apresentados na Tabela~\ref{tab:arquivos-parte2}.
+
+\begin{table}[H]
+    \centering
+    \caption{Organização dos arquivos utilizados na identificação da planta desconhecida.}
+    \label{tab:arquivos-parte2}
+    \small
+    \setlength{\tabcolsep}{6pt}
+    \renewcommand{\arraystretch}{1.25}
+    \begin{tabular}{
+        @{}
+        >{\raggedright\arraybackslash}p{0.25\textwidth}
+        >{\raggedright\arraybackslash}p{0.68\textwidth}
+        @{}
+    }
+        \toprule
+        \textbf{Arquivo} & \textbf{Responsabilidade} \\
+        \midrule
+        \texttt{unkownPlant.m} & Carregar os dois conjuntos de dados, determinar a ordem e executar as duas identificações. \\
+        \texttt{getOrder.m} & Calcular a solução de Wiener para ordens candidatas e gerar a curva MSE versus ordem. \\
+        \texttt{getMSE.m} & Avaliar o erro médio quadrático de um vetor de coeficientes sobre todas as realizações. \\
+        \texttt{adaptiveFilter.m} & Executar a recursão LMS, armazenar os erros quadráticos e estimar os coeficientes da planta. \\
+        \texttt{PartTwoConsts.m} & Armazenar a ordem máxima pesquisada e os passos de adaptação. \\
+        \texttt{whites.mat} & Fornecer 100 realizações com entrada branca, cada uma com 15000 amostras. \\
+        \texttt{correl.mat} & Fornecer 100 realizações com entrada correlacionada, cada uma com 50000 amostras. \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Modelo matemático e procedimento de identificação}
+
+\paragraph{} Admite-se uma planta FIR causal de comprimento desconhecido \(L\), ou ordem \(M=L-1\). Para uma ordem
+candidata, define-se o vetor regressor
+
+\begin{equation}
+    u(i)=
+    [u(i)\;u(i-1)\;\cdots\;u(i-M)]^T.
+\end{equation}
+
+A saída observada é modelada por
+
+\begin{equation}
+    d(i)=u^T(i)w^{o}+v(i),
+\end{equation}
+
+em que \(w^{o}\) é a resposta ao impulso desconhecida e \(v(i)\) representa o ruído de
+medição. Para um vetor estimado \(\widehat{w}(i)\), a saída do modelo e o erro são
+
+\begin{equation}
+    y(i)=u^T(i)\widehat{w}(i),
+    \qquad
+    e(i)=d(i)-y(i).
+\end{equation}
+
+O LMS atualiza os coeficientes por
+
+\begin{equation}
+    \widehat{w}(i+1)
+    =
+    \widehat{w}(i)
+    + \mu\,u(i)e(i).
+    \label{eq:lms}
+\end{equation}
+
+A curva de aprendizado é estimada pela média sobre as \(R=100\) realizações:
+
+\begin{equation}
+    \widehat{\mathrm{MSE}}(i)
+    =\frac{1}{R}\sum_{r=1}^{R}e_r^2(i).
+\end{equation}
+
+\section{Determinação da ordem da planta}
+
+\paragraph{} Para cada comprimento candidato \(L=1,2,\ldots,40\), foram estimadas a matriz de autocorrelação e a
+correlação cruzada:
+
+\begin{equation}
+    \widehat{R}_{u,L}
+    =\frac{1}{N_T}\sum_{r,i}u_r(i)u_r^T(i),
+    \qquad
+    \widehat{r}_{du,L}
+    =\frac{1}{N_T}\sum_{r,i}u_r(i)d_r(i),
+\end{equation}
+
+onde \(N_T\) é o número total de amostras processadas. A solução de Wiener de cada modelo é
+
+\begin{equation}
+    \widehat{w}_{L}
+    =\widehat{R}_{u,L}^{-1}\widehat{r}_{du,L}.
+\end{equation}
+
+Em seguida, o MSE de cada solução é calculado por
+
+\begin{equation}
+    \widehat{J}_{L}
+    =\frac{1}{N_T}\sum_{r,i}
+    \left[d_r(i)-\widehat{w}_{L}^{T}u_r(i)\right]^2.
+\end{equation}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{MSEordem.png}
+    \caption{MSE da solução de Wiener em função da ordem candidata, utilizando o conjunto de entrada branca.}
+    \label{fig:ordem-parte2}
+\end{figure}
+
+Para ordens inferiores a 30, o modelo não possui graus de liberdade suficientes para representar toda a
+resposta ao impulso. O erro diminui em etapas à medida que novos coeficientes relevantes são incluídos.
+
+A queda até aproximadamente \(-30\,\mathrm{dB}\) ocorre quando se utiliza \(L=31\). A partir desse ponto,
+a inclusão de novos coeficientes não reduz o erro, que permanece limitado pelo ruído de medição. Portanto,
+
+\begin{equation}
+    M=30\quad\text{e}\quad L=31.
+\end{equation}
+
+\section{Curvas de aprendizado do MSE}
+
+\subsection{Entrada branca}
+
+Com \(\mu=0{,}01\), a curva média sobre as 100 realizações é mostrada na
+Figura~\ref{fig:mse-branca-parte2}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{CurvaDeAprendizadoBranco.png}
+    \caption{Curva de aprendizado do LMS para o caso de entrada branca.}
+    \label{fig:mse-branca-parte2}
+\end{figure}
+
+A entrada branca proporciona convergência rápida. Após aproximadamente 500 iterações, a curva já se
+encontra próxima do regime permanente. A média das últimas 3000 amostras é
+
+\begin{equation}
+    \mathrm{MSE}_{\infty,\mathrm{branca}}
+    \approx1{,}186\times10^{-3}
+    \quad\Rightarrow\quad
+    -29{,}26\,\mathrm{dB}.
+\end{equation}
+
+A solução Wiener é \(9{,}9995\times10^{-4}\), praticamente \(-30\,\mathrm{dB}\). A diferença decorre do
+desajuste do LMS com passo constante.
+
+\clearpage
+
+\subsection{Entrada correlacionada}
+
+\paragraph{} Para a entrada correlacionada, adotou-se \(\mu=0{,}003\). A curva é apresentada na
+Figura~\ref{fig:mse-corr-parte2}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.88\textwidth]{CurvaDeAprendizadoCorrelacionada.png}
+    \caption{Curva de aprendizado do LMS para o caso de entrada correlacionada.}
+    \label{fig:mse-corr-parte2}
+\end{figure}
+
+A convergência é consideravelmente mais lenta: a curva se aproxima do regime permanente somente após
+cerca de 15000 iterações. A média das últimas 5000 amostras é
+
+\begin{equation}
+    \mathrm{MSE}_{\infty,\mathrm{corr}}
+    \approx1{,}053\times10^{-3}
+    \quad\Rightarrow\quad
+    -29{,}77\,\mathrm{dB}.
+\end{equation}
+
+O MSE final é ligeiramente menor que no caso branco porque o passo empregado também é menor. Isso não
+significa que a entrada correlacionada seja mais favorável: ela exige um número muito maior de iterações
+para atingir o mesmo piso de erro.
+
+\begin{table}[H]
+    \centering
+    \caption{Comparação das curvas de aprendizado.}
+    \label{tab:comparacao-mse-parte2}
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Entrada} & \textbf{Passo \(\mu\)} & \textbf{Aproximação do regime} & \textbf{MSE em regime} \\
+        \midrule
+        Branca & 0,01 & cerca de 600 iterações & \(-29{,}26\,\mathrm{dB}\) \\
+        Correlacionada & 0,003 & cerca de 15000 iterações & \(-29{,}77\,\mathrm{dB}\) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\clearpage
+
+\section{Vetor estimado da planta desconhecida}
+
+\paragraph{} Foram consideradas três estimativas: a média dos vetores finais do LMS com entrada branca, a média dos
+vetores finais com entrada correlacionada e a solução de Wiener consolidada, obtida a partir das estatísticas
+dos dois conjuntos.
+
+A distância entre as duas estimativas médias do LMS é
+
+\begin{equation}
+    \left\|
+    \widehat{w}_{\mathrm{branca}}
+    -\widehat{w}_{\mathrm{corr}}
+    \right\|_2
+    \approx1{,}61\times10^{-3},
+\end{equation}
+
+confirmando que os dois conjuntos descrevem a mesma planta. A estimativa consolidada é apresentada na
+Tabela~\ref{tab:coeficientes-parte2}.
+
+\begin{table}[H]
+    \centering
+    \caption{Coeficientes estimados da planta FIR de ordem 30.}
+    \label{tab:coeficientes-parte2}
+    \small
+    \setlength{\tabcolsep}{14pt}
+    \renewcommand{\arraystretch}{1.08}
+
+    \begin{tabular}{rrr}
+        \toprule
+        \textbf{\(k\)}
+        &
+        \textbf{\(\widehat{w}_{\mathrm{white}}(k)\)}
+        &
+        \textbf{\(\widehat{w}_{\mathrm{corr}}(k)\)}
+        \\
+        \midrule
+         0 &  0.4782 &  0.4783 \\
+         1 &  0.1346 &  0.1364 \\
+         2 &  0.2254 &  0.2259 \\
+         3 & -0.1736 & -0.1738 \\
+         4 & -0.0779 & -0.0778 \\
+         5 & -0.0448 & -0.0444 \\
+         6 &  0.1818 &  0.1811 \\
+         7 & -0.0454 & -0.0457 \\
+         8 &  0.1150 &  0.1150 \\
+         9 & -0.3387 & -0.3359 \\
+        10 & -0.0570 & -0.0580 \\
+        11 & -0.1346 & -0.1356 \\
+        12 & -0.2583 & -0.2596 \\
+        13 &  0.0854 &  0.0826 \\
+        14 &  0.0463 &  0.0469 \\
+        15 &  0.0059 &  0.0053 \\
+        16 & -0.2199 & -0.2177 \\
+        17 &  0.1838 &  0.1852 \\
+        18 &  0.0574 &  0.0581 \\
+        19 & -0.0513 & -0.0504 \\
+        20 &  0.0047 &  0.0044 \\
+        21 & -0.0431 & -0.0430 \\
+        22 & -0.2886 & -0.2867 \\
+        23 & -0.0460 & -0.0451 \\
+        24 & -0.1344 & -0.1359 \\
+        25 & -0.1580 & -0.1603 \\
+        26 & -0.1890 & -0.1894 \\
+        27 & -0.0856 & -0.0879 \\
+        28 & -0.3296 & -0.3287 \\
+        29 &  0.1571 &  0.1570 \\
+        30 &  0.0857 &  0.0850 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Conclusão}
+
+O LMS identificou satisfatoriamente as plantas FIR utilizando apenas os pares de entrada e saída. Na primeira parte, as curvas apresentaram redução consistente do erro e valores finais compatíveis com a variância do ruído e com o erro previsto para o passo adotado.
+
+Na segunda parte, a análise permitiu identificar uma planta FIR de ordem
+
+\begin{equation}
+    M=30,\qquad L=31.
+\end{equation}
+
+Essa ordem foi determinada pela queda do MSE da solução de Wiener até o piso de aproximadamente
+\(-30\,\mathrm{dB}\). As curvas de aprendizado também confirmaram a influência das estatísticas da entrada: o sinal branco proporcionou convergência rápida, enquanto a entrada correlacionada exigiu um passo menor e aproximadamente uma ordem de grandeza a mais de iterações.
+
+Por fim, as estimativas obtidas com os dois conjuntos de entrada apresentaram forte concordância, permitindo determinar de maneira confiável os 31 coeficientes da planta. Dessa forma, o experimento demonstrou a convergência do LMS e possibilitou a análise quantitativa do MSE e do EMSE.
+
+\end{document}
