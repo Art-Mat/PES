@@ -1,57 +1,13 @@
 function k = unkownPlant()
 addpath("data")
 addpath("functions/")
-x = load("whites.mat").X;
-y = load("whites.mat").Y;
+x_white = load("whites.mat").X;
+y_white = load("whites.mat").Y;
+x_corr = load("correl.mat").X;
+y_corr = load("correl.mat").Y;
 
-getOrder(x, y) % Gráfico para questão a)
+m = getOrder(x_white, y_white) % Gráfico para questão a)
 
-
-end
-
-function getOrder(x, y)
-% Plota o MSE da Solução de Wiener para diferentes ordens
-    MSE = zeros(PartTwoConsts.MAX_ORDER, 1);
-    for i = 1:PartTwoConsts.MAX_ORDER
-            % Inicialização das matrizes e vetores usadas na iteração
-            corr_matrix = zeros(i, i);
-            corr_vec = zeros(i ,1);
-            for j = 1:size(x, 1)
-                u = zeros(i, 1);
-                for k = 1:size(x, 2)
-                    % Adicionando o novo valor aos vetores entrada e saída
-                    u = circshift(u, 1);
-                    u(1) = x(1, j);
-                    d = y(, j);
-        
-                    % Realizando o acúmulo para a correlação entre entradas e
-                    % entrada/saída
-                    corr_matrix = corr_matrix + u * u';
-                    corr_vec = corr_vec + u * d;
-                end
-            end
-            corr_matrix = corr_matrix / length(x);
-            corr_vec = corr_vec / length(x);
-    
-            w = corr_matrix \ corr_vec; % Solução de wiener para o sistema
-            MSE(i) = getMSE(w, x(1,:), y(1, :));
-    end
-    figure;
-    scatter(0:PartTwoConsts.MAX_ORDER - 1, 10*log10(MSE), 'LineWidth', 1.5);
-    title('MSE x Ordem');
-    xlabel('Ordem do sistema (M)');
-    ylabel('MSE (dB)');
-    grid on;
-    
-end
-
-function MSE = getMSE(w, x, d)
-sce = 0; % Square cumulative error
-u = zeros(length(w), 1);
-for i = 1:length(d)
-    u = circshift(u, 1);
-    u(1) = x(i);
-    sce = sce + (d(i) - w' * u)^2;
-end
-MSE = sce / length(d);
+adaptiveFilter(x_white, y_white,m);
+adaptiveFilter(x_corr, y_corr);
 end
